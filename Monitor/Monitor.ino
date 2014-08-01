@@ -1,4 +1,23 @@
 /*
+Temperature, Humidity and Wind Speed Monitor
+
+to collecte data and send it back to people for monitoring & preventing purposes.  
+
+Hardward & Pins
+
+* DHT22 Setup *
+DHT22    Arduino
+VCC      +3v3
+DATA     D2
+N.C      -
+GND      GND
+
+* Wind Sensor Setup *
+Wind Sensor    Arduino
+GND            GND
++V             +5
+RV             A1
+TMP            A0
 
 References:
 o DHT22 - http://playground.arduino.cc//Main/DHTLib
