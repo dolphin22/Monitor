@@ -22,9 +22,34 @@ TMP            A0
 References:
 o DHT22 - http://playground.arduino.cc//Main/DHTLib
 o Wind Sensor - https://github.com/moderndevice/Wind_Sensor
-
+o Xively Arduino - https://github.com/xively/xively_arduino
 */
+#include <SPI.h>
+#include <Ethernet.h>
+#include <HttpClient.h>
+#include <Xively.h>
 #include <dht.h>
+
+// MAC address for your Ethernet shield
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+
+// Your Xively key to let you upload data
+char xivelyKey[] = "BHmYVuJlx2KpoSLMaTQlbfaqhNsVvZ63AFdA110TJKMKmmEr";
+
+// Define the strings for our datastream IDs
+char humidity[] = "humidity";
+char temperature[] = "temperature";
+char wind_speed[] = "wind_speed";
+XivelyDatastream datastreams[] = {
+  XivelyDatastream(humidity, strlen(humidity), DATASTREAM_FLOAT),
+  XivelyDatastream(temperature, strlen(temperature), DATASTREAM_INT),
+  XivelyDatastream(wind_speed, strlen(wind_speed), DATASTREAM_FLOAT),
+};
+// Finally, wrap the datastreams into a feed
+XivelyFeed feed(471622402, datastreams, 3 /* number of datastreams */);
+
+EthernetClient client;
+XivelyClient xivelyclient(client);
 
 dht DHT;  // dht type
 
@@ -46,6 +71,11 @@ float WindSpeed_MPH;  // Wind speed MPH
 void setup()
 {
     Serial.begin(57600);
+    while (Ethernet.begin(mac) != 1)
+    {
+      Serial.println("Error getting IP address via DHCP, trying again...");
+      delay(15000);
+    }
     Serial.println("Temperature, Humidity & Wind Speed Monitor");
     Serial.println("--------------------------------------------");
     Serial.println("Status, Humidity (%), Temperature (C), TMP (V), RV (V), ZeroWind (V), Wind Speed (MPH)");
@@ -102,5 +132,14 @@ void loop()
     Serial.print((float)WindSpeed_MPH);
     Serial.println();
     
-    delay(2000);
+    // Write data to datastreams
+    datastreams[0].setFloat(DHT.humidity);
+    datastreams[1].setInt(DHT.temperature);
+    datastreams[2].setFloat((float)WindSpeed_MPH);
+    
+    int ret = xivelyclient.put(feed, xivelyKey);
+    Serial.print("Xively: ");
+    Serial.println(ret);
+    
+    delay(5000);
 }
